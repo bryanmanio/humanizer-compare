@@ -2,7 +2,7 @@
 
 A skill for Claude Code that rewrites the copy on a website with [humanizer](https://github.com/blader/humanizer), then shows the old and new pages side by side so you can judge the edits in place.
 
-![An AI-written version of a landing page on the left, with its headline "Unlock the Full Power of Your Server, Right From Your Menu Bar" outlined in red, and the humanized page on the right with "Everything running on your server, in your menu bar" outlined in green. A tooltip under the new headline names the humanizer patterns, §16 Sales language and §20 Decorative headings, and explains the change.](docs/screenshot.png)
+![An AI-written version of a landing page on the left, with its headline "Unlock the Full Power of Your Server, Right From Your Menu Bar" outlined in red, and the humanized page on the right with "Everything running on your server, in your menu bar" outlined in green. A tooltip under the new subheading names the humanizer patterns, §1 Not X but Y and §6 Forced triads, and explains the change.](docs/screenshot.png)
 
 For this screenshot, the left side was written on purpose with as many AI writing patterns as possible. The right side is what the skill turned it into.
 
