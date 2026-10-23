@@ -20,6 +20,9 @@
   header .n { margin-left: auto; color: #8a94a3; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   header .n[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; height: calc(100% - 37px); background: #222832; }
+  /* Phone widths: both frames side by side in the middle instead of pinned to each half's left edge. */
+  .cols.narrow { grid-template-columns: var(--w) var(--w); justify-content: center; gap: 32px; background: #0b0d11; }
+  .cols.narrow .frame { outline: 1px solid #222832; }
   .col { display: flex; flex-direction: column; min-width: 0; background: #0b0d11; }
   .col h2 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 6px 12px; color: #8a94a3; }
   .col.after h2 { color: #6fb3ff; }
@@ -55,7 +58,9 @@ let scale = 1;
 
 // Render each page at a real device width and scale it down to fit its column.
 function fit() {
-  const w = +vw.value;
+  const w = +vw.value, cols = document.querySelector('.cols');
+  cols.classList.toggle('narrow', 2 * w + 32 <= innerWidth);
+  cols.style.setProperty('--w', w + 'px');
   for (const f of [A, B]) {
     const box = f.parentElement.getBoundingClientRect();
     scale = Math.min(1, box.width / w);
