@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Copy: before / after</title>
+<!--
+  Side-by-side copy comparison. Reads ./changes.json:
+    { "pages": [{ "name": "Home", "before": "/_compare/before/index.html", "after": "/",
+                  "changes": [{ "before", "after", "pattern", "why", "visible"? }] }],
+      "settleMs"?: 600 }
+  Hovering a green box shows that change's pattern and why. ?page=N picks a page.
+  Both pages must be same-origin with this file, or the diff and scroll sync can't reach into them.
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #0b0d11; color: #c9d1dc; font: 13px/1.4 system-ui, sans-serif; }
+  header { display: flex; gap: 16px; align-items: center; padding: 0 14px; height: 37px; white-space: nowrap; overflow: hidden; border-bottom: 1px solid #222832; }
+  header b { color: #fff; }
+  header label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  header .n { margin-left: auto; color: #8a94a3; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  header .n[title] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; height: calc(100% - 37px); background: #222832; }
+  .col { display: flex; flex-direction: column; min-width: 0; background: #0b0d11; }
+  .col h2 { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 6px 12px; color: #8a94a3; }
+  .col.after h2 { color: #6fb3ff; }
+  .frame { flex: 1; overflow: hidden; position: relative; }
+  iframe { border: 0; position: absolute; top: 0; left: 0; transform-origin: 0 0; background: #fff; }
+  #tip { position: fixed; z-index: 10; max-width: 340px; padding: 9px 11px; border-radius: 8px; pointer-events: none;
+         background: #161b23; border: 1px solid #2c3340; box-shadow: 0 10px 30px -8px #000c;
+         opacity: 0; transform: translateY(2px); transition: opacity .12s ease-out, transform .12s ease-out; }
+  #tip.on { opacity: 1; transform: none; }
+  #tip .p { display: block; font-size: 11px; font-weight: 600; color: #3ddc84; margin-bottom: 3px; }
+  #tip .w { color: #dfe5ee; }
+</style>
+</head>
+<body>
+<header>
+  <b>Copy comparison</b>
+  <label><input type="checkbox" id="sync" checked> Sync scroll</label>
+  <label><input type="checkbox" id="mark" checked> Highlight changes</label>
+  <label>Viewport <select id="vw"><option>1280</option><option>1440</option><option>390</option></select></label>
+  <select id="page" hidden></select>
+  <span class="n" id="n">Loading…</span>
+</header>
+<div class="cols">
+  <div class="col"><h2>Before</h2><div class="frame"><iframe id="a"></iframe></div></div>
+  <div class="col after"><h2>After (humanized)</h2><div class="frame"><iframe id="b"></iframe></div></div>
+</div>
+<div id="tip" role="tooltip"><span class="p"></span><span class="w"></span></div>
+<script>
+const $ = id => document.getElementById(id);
+const A = $('a'), B = $('b'), vw = $('vw'), tip = $('tip');
+const norm = s => (s || '').replace(/\s+/g, ' ').trim();
+let scale = 1;
+
+// Render each page at a real device width and scale it down to fit its column.
+function fit() {
+  const w = +vw.value;
+  for (const f of [A, B]) {
+    const box = f.parentElement.getBoundingClientRect();
+    scale = Math.min(1, box.width / w);
+    f.style.width = w + 'px';
+    f.style.height = box.height / scale + 'px';
+    f.style.transform = `scale(${scale})`;
+  }
+}
+addEventListener('resize', fit);
+vw.onchange = fit;
+fit();
+
+// Visible text nodes in document order.
+function texts(doc) {
+  const out = [], w = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => /\S/.test(n.data) && !n.parentElement.closest('script,style,svg,noscript,template')
+      ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT });
+  while (w.nextNode()) out.push(w.currentNode);
+  return out;
+}
+
+// Longest common subsequence over the two node lists; anything off the
+// common path changed. Survives edits that add, drop, merge or split nodes.
+function diff(ta, tb) {
+  const a = ta.map(n => norm(n.data)), b = tb.map(n => norm(n.data));
+  const n = a.length, m = b.length, L = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+    L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const da = [], db = [];
+  let i = 0, j = 0;
+  while (i < n && j < m) {
+    if (a[i] === b[j]) { i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) da.push(ta[i++]);
+    else db.push(tb[j++]);
+  }
+  while (i < n) da.push(ta[i++]);
+  while (j < m) db.push(tb[j++]);
+  return [da, db];
+}
+
+function mark(doc, nodes, color) {
+  const st = doc.createElement('style');
+  st.id = 'cmp-style';
+  st.textContent = `.cmp-diff{outline:2px solid ${color};outline-offset:3px;border-radius:3px;background:${color}22}
+    .cmp-diff[data-why]{cursor:help}`;
+  doc.head.append(st);
+  const els = [...new Set(nodes.map(n => n.parentElement))];
+  for (const el of els) el.classList.add('cmp-diff');
+  return els;
+}
+
+// Pair each green box with the change whose "after" text it shows.
+function attach(els, changes) {
+  const overlap = (a, b) => a && b && (a.includes(b.slice(0, 40)) || b.includes(a.slice(0, 40)));
+  for (const el of els) {
+    const t = norm(el.textContent);
+    const i = changes.findIndex(c => c.visible !== false && overlap(t, norm(c.after)));
+    if (i >= 0) el.dataset.why = i;
+  }
+}
+
+function showTip(el, c) {
+  tip.querySelector('.p').textContent = c.pattern || '';
+  tip.querySelector('.w').textContent = c.why || '';
+  const f = B.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const x = f.left + r.left * scale, top = f.top + r.top * scale, bottom = f.top + r.bottom * scale;
+  tip.classList.add('on');
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(x, innerWidth - tw - 8)) + 'px';
+  tip.style.top = (bottom + 8 + th < innerHeight ? bottom + 8 : top - th - 8) + 'px';
+}
+const hideTip = () => tip.classList.remove('on');
+
+function compare(cfg) {
+  const changes = cfg.changes || [];
+  let da, db;
+  try { [da, db] = diff(texts(A.contentDocument), texts(B.contentDocument)); }
+  catch { $('n').textContent = 'Pages are cross-origin: serve both from the same origin as this file.'; return; }
+  mark(A.contentDocument, da, '#ff6b6b');
+  attach(mark(B.contentDocument, db, '#3ddc84'), changes);
+
+  // Title, meta and label edits have no box to hover; their reasons go on the count.
+  const hidden = changes.filter(c => c.visible === false);
+  $('n').textContent = `${db.length} visible text change${db.length === 1 ? '' : 's'}` + (hidden.length ? ` + ${hidden.length} not on page` : '');
+  if (hidden.length) $('n').title = hidden.map(c => `${c.before} → ${c.after}\n${c.pattern}: ${c.why}`).join('\n\n');
+
+  const doc = B.contentDocument;
+  doc.addEventListener('mouseover', e => {
+    const el = e.target.closest?.('.cmp-diff[data-why]');
+    if (el && $('mark').checked) showTip(el, changes[el.dataset.why]); else hideTip();
+  });
+  doc.addEventListener('mouseleave', hideTip);
+
+  // Scroll sync, by fraction of page height (the two pages can differ in length).
+  let lock = false;
+  for (const [src, dst] of [[A, B], [B, A]]) src.contentWindow.addEventListener('scroll', () => {
+    hideTip();
+    if (!$('sync').checked || lock) return;
+    lock = true;
+    dst.contentDocument.documentElement.style.scrollBehavior = 'auto';
+    const s = src.contentDocument.scrollingElement, d = dst.contentDocument.scrollingElement;
+    d.scrollTop = s.scrollTop / (s.scrollHeight - s.clientHeight || 1) * (d.scrollHeight - d.clientHeight);
+    requestAnimationFrame(() => lock = false);
+  });
+
+  $('mark').onchange = e => {
+    hideTip();
+    for (const f of [A, B]) f.contentDocument.getElementById('cmp-style').disabled = !e.target.checked;
+  };
+}
+
+fetch('changes.json', { cache: 'no-store' }).then(r => r.json()).then(all => {
+  const pages = all.pages || [all];
+  const at = Math.min(+new URLSearchParams(location.search).get('page') || 0, pages.length - 1);
+  const cfg = { settleMs: all.settleMs, ...pages[at] };
+  if (pages.length > 1) {
+    $('page').hidden = false;
+    $('page').append(...pages.map((p, i) => new Option(p.name || p.after, i, false, i === at)));
+    $('page').onchange = e => { location.search = '?page=' + e.target.value; };
+  }
+  let ready = 0;
+  for (const f of [A, B]) f.addEventListener('load', () => {
+    // Pages that run an intro sequence: let it settle before diffing.
+    setTimeout(() => { if (++ready === 2) compare(cfg); }, cfg.settleMs ?? 600);
+  }, { once: true });
+  A.src = cfg.before; B.src = cfg.after;
+}).catch(e => { $('n').textContent = 'Could not load changes.json: ' + e.message; });
+</script>
+</body>
+</html>
