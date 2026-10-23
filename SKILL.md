@@ -1,9 +1,9 @@
 ---
-name: copy-compare
+name: humanizer-compare
 description: Humanize a site's copy (always runs the bundled humanizer skill) and show the old and new pages side by side in one minimal view, with synced scrolling and changed text highlighted on both sides. Hovering a changed (green) passage shows the humanizer pattern and the reason for the edit. Use when the user wants to humanize, de-AI, or rewrite the copy on a website, landing page, or app UI and see before/after, or asks for a copy comparison, copy diff, or side-by-side of copy changes. Triggers on: humanize copy, humanizer, de-AI the copy, copy comparison, compare copy, before/after copy, side by side copy, copy diff, rewrite site copy.
 ---
 
-# Copy compare
+# Humanizer compare
 
 Run humanizer over a site's copy, then show the result as a side-by-side before/after view the user can scroll through. Every run produces the same three things:
 

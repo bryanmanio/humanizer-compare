@@ -1,8 +1,10 @@
-# copy-compare
+# humanizer-compare
 
 A skill for Claude Code that rewrites the copy on a website with [humanizer](https://github.com/blader/humanizer), then shows the old and new pages side by side so you can judge the edits in place.
 
-![The before page on the left with the old headline outlined in red, the after page on the right with the new headline outlined in green, and a tooltip under it naming the humanizer pattern and the reason for the change.](docs/screenshot.png)
+![An AI-written version of a landing page on the left, with its headline "Unlock the Full Power of Your Server, Right From Your Menu Bar" outlined in red, and the humanized page on the right with "Everything running on your server, in your menu bar" outlined in green. A tooltip under the new headline names the humanizer patterns, §16 Sales language and §20 Decorative headings, and explains the change.](docs/screenshot.png)
+
+For this screenshot, the left side was written on purpose with as many AI writing patterns as possible. The right side is what the skill turned it into.
 
 ## What you get
 
@@ -20,16 +22,16 @@ It also replies with a table of every edit and a list of what it left alone. Not
 ### Claude Code plugin
 
 ```text
-/plugin marketplace add bryanmanio/copy-compare
-/plugin install copy-compare@copy-compare
+/plugin marketplace add bryanmanio/humanizer-compare
+/plugin install humanizer-compare@humanizer-compare
 ```
 
-Installed this way, the skill answers to `/copy-compare:copy-compare`. Loading a skill from the plugin root needs Claude Code 2.1.142 or newer. On older versions, use the Skills CLI below.
+Installed this way, the skill answers to `/humanizer-compare:humanizer-compare`. Loading a skill from the plugin root needs Claude Code 2.1.142 or newer. On older versions, use the Skills CLI below.
 
 ### Skills CLI
 
 ```sh
-npx skills add bryanmanio/copy-compare --global --agent claude-code
+npx skills add bryanmanio/humanizer-compare --global --agent claude-code
 ```
 
 Leave off `--global` to install it for the current project only.
@@ -37,17 +39,17 @@ Leave off `--global` to install it for the current project only.
 ### Manually
 
 ```sh
-git clone https://github.com/bryanmanio/copy-compare ~/.claude/skills/copy-compare
+git clone https://github.com/bryanmanio/humanizer-compare ~/.claude/skills/humanizer-compare
 ```
 
-To update a manual install, run `git -C ~/.claude/skills/copy-compare pull`.
+To update a manual install, run `git -C ~/.claude/skills/humanizer-compare pull`.
 
 ## Use
 
 Open your site's project in Claude Code and ask for it:
 
 ```text
-/copy-compare
+/humanizer-compare
 ```
 
 Or say it in your own words, for example "humanize the copy on my landing page and show me a before and after". The skill finds the copy, snapshots each page, makes the edits, and gives you a `localhost` link to the comparison.

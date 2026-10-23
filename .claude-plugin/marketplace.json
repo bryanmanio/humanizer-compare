@@ -1,14 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "copy-compare",
+  "name": "humanizer-compare",
   "owner": {
     "name": "Bryan Maniotakis",
     "url": "https://github.com/bryanmanio"
   },
-  "description": "Install copy-compare as a Claude plugin.",
+  "description": "Install humanizer-compare as a Claude plugin.",
   "plugins": [
     {
-      "name": "copy-compare",
+      "name": "humanizer-compare",
       "source": "./",
       "description": "Humanize a site's copy and compare the old and new pages side by side, with the reason for each edit on hover.",
       "license": "MIT",

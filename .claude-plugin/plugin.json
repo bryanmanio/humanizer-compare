@@ -1,14 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "copy-compare",
+  "name": "humanizer-compare",
   "description": "Humanize a site's copy and compare the old and new pages side by side, with the reason for each edit on hover.",
   "version": "1.0.0",
   "author": {
     "name": "Bryan Maniotakis",
     "url": "https://github.com/bryanmanio"
   },
-  "homepage": "https://github.com/bryanmanio/copy-compare",
-  "repository": "https://github.com/bryanmanio/copy-compare",
+  "homepage": "https://github.com/bryanmanio/humanizer-compare",
+  "repository": "https://github.com/bryanmanio/humanizer-compare",
   "license": "MIT",
   "keywords": ["copywriting", "humanize", "writing", "landing-page", "diff"],
   "skills": ["./"]
